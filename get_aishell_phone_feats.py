@@ -61,13 +61,16 @@ def worker(data: List[str]):
 
 
 def main():
-    nj = 4
+    nj = 16
     n = len(trans)
+    
+    all_data = list(zip(wavs, trans))
+    np.random.shuffle(all_data)
 
     # calculate phone feats concurrently
     i = 0
     while i < n:
-        data = list(zip(wavs[i: i + nj], trans[i: i + nj]))
+        data = all_data[i: i + nj]
         ps = [Process(target=worker, args=(data[j],)) for j in range(nj) if len(data) > j]
         for p in ps:
             p.start()

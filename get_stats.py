@@ -3,17 +3,7 @@ import os
 from os.path import join as pjoin
 import json
 import sys
-
-
-# 声母
-INITIALS = ['b', 'c', 'ch', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 'sh', 't', 'w', 'x', 'y', 'z', 'zh']
-
-# SSB utterance id to aishell2 utterance id
-ssb2utt = {}
-with open('ssbutt.txt') as f:
-    for line in f:
-        utt, ssb = line.replace('\n', '').split('|')
-        ssb2utt[ssb] = utt
+from common import *
 
 
 def get_utt2trans():
@@ -61,14 +51,6 @@ if __name__ == "__main__":
     utt2trans = get_utt2trans()
     pid2scores = {i: [] for i in range(201 + 1)}
 
-    phone2id = {}
-    with open('phones.txt') as f:
-        for line in f:
-            tokens = line.replace('\n', '').split()
-            name, pid = tokens
-            name = name.replace('_', '')
-            phone2id[name] = int(pid)
-
     with os.scandir('aishell_phone_feats') as it:
         for entry in it:
             if entry.is_file():
@@ -92,4 +74,8 @@ if __name__ == "__main__":
                     idx = phone2id[t] - 1
                     pid2scores[idx + 1].append(feats[i, idx])
 
-    print(pid2scores)
+    os.makedirs('feats', exist_ok=True)
+    for pid, scores in pid2scores.items():
+        if len(scores) > 0:
+            print(f'{pid}: {len(scores)} samples')
+            np.savetxt(pjoin('feats', f'{pid}.txt'), scores)
