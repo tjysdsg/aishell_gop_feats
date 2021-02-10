@@ -4,52 +4,14 @@ from os.path import join as pjoin
 import json
 import sys
 from common import *
-
-
-def get_utt2trans():
-    # utt of filtered wavs
-    filtered_wavs = set()
-    with open('wav_filtered.scp') as f:
-        for line in f:
-            utt = line.split('\t')[0]
-            filtered_wavs.add(utt)
-
-    # utt to its phone-level transcript
-    utt2trans = {}
-    with open('annotations.txt') as f:
-        for line in f:
-            tokens = line.replace('\n', '').split()
-            utt = tokens[0].split('.')[0]
-            utt = ssb2utt.get(utt)
-            if utt is None or utt not in filtered_wavs:
-                continue
-            phones = tokens[2::2]
-            phones = [p.replace('5', '0') for p in phones]  # 轻声 5 -> 0
-            # separate initals and finals
-            utt2trans[utt] = []
-            for p in phones:
-                if p[:2] in INITIALS:
-                    utt2trans[utt].append(p[:2])
-                    final = p[2:]
-                elif p[:1] in INITIALS:
-                    utt2trans[utt].append(p[:1])
-                    final = p[1:]
-                else:
-                    final = p
-
-                # 去掉儿化
-                if 'er' not in final and len(final) >= 2 and final[-2] == 'r':
-                    utt2trans[utt].append(final.replace('r', ''))
-                    utt2trans[utt].append('er0')
-                else:
-                    utt2trans[utt].append(final)
-
-    return utt2trans
+from phone_feats import get_phone_feats
 
 
 if __name__ == "__main__":
     utt2trans = get_utt2trans()
     pid2scores = {i: [] for i in range(201 + 1)}
+    
+    phone_feats = get_phone_feats()
 
     with os.scandir('aishell_phone_feats') as it:
         for entry in it:
